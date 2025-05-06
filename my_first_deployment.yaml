@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-first-deployment
+  labels:
+    app: my-first-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-first-deployment
+  template:
+    metadata:
+      labels:
+        app: my-first-deployment
+    spec:
+      containers:
+      - name: my-first-deployment
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-first-service
+spec:
+  selector:
+    app: my-first-deployment
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  #type: ClusterIP
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-first-ingress
+spec:
+  rules:
+  - host: "example.com"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: my-first-service
+            port:
+              number: 80
+
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: multi-port-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: my-first-deployment
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/24
