@@ -14,13 +14,31 @@ spec:
       labels:
         app: my-first-deployment
     spec:
+      volumes:
+        - name: my-first-pd
+          persistentVolumeClaim:
+            claimName: my-first-pvc
       containers:
       - name: my-first-deployment
         image: nginx:latest
+        volumeMounts:
+        - mountPath: "/usr/share/nginx/html"
+          name: my-first-pd
         ports:
         - containerPort: 80
 
-
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-first-pvc
+spec:
+  storageClassName: my-first-sc
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
 ---
 
 apiVersion: v1
@@ -38,37 +56,3 @@ spec:
 
 ---
 
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: my-first-ingress
-spec:
-  rules:
-  - host: "example.com"
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: my-first-service
-            port:
-              number: 80
-
-
----
-
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: multi-port-egress
-spec:
-  podSelector:
-    matchLabels:
-      app: my-first-deployment
-  policyTypes:
-    - Egress
-  egress:
-    - to:
-        - ipBlock:
-            cidr: 10.0.0.0/24
