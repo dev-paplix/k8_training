@@ -2,10 +2,25 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: pg-storage-class
-provisioner: csi-driver.example-vendor.example
+provisioner: microk8s.io/hostpath
 reclaimPolicy: Delete
 allowVolumeExpansion: true
-hostPath:
-  path: "/home/student/may_training/postgres/storage"
 volumeBindingMode: WaitForFirstConsumer
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pg-pv
+spec:
+  capacity:
+    storage: 5Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: pg-storage-class
+  hostPath:
+    path: "/home/student/may_training/postgres/storage"
 
