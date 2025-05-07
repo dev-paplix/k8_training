@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pg-pv
+spec:
+  capacity:
+    storage: 5Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: pg-storage-class
+  hostPath:
+    path: "/home/student/may_training/postgres/storage"
+
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pg-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: pg-storage-class
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: pg-service
+  labels:
+    app: pg-service
+spec:
+  ports:
+  - port: 5432
+    name: 
+      valueFrom:
+        configMapKeyRef:
+          name: my-first-cm
+          key: PG_PORT
+  clusterIP: None
+  selector:
+    app: pg
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: pg
+spec:
+  selector:
+    matchLabels:
+      app: pg
+  serviceName: "pg-service"
+  replicas: 1
+  minReadySeconds: 10 # by default is 0
+  template:
+    metadata:
+      labels:
+        app: pg # has to match .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: mypg
+          persistentVolumeClaim:
+            claimName: pg-pvc
+      containers:
+      - name: pg
+        volumeMounts:
+        - mountPath: "/var/lib/postgresql/data"
+          name: mypg
+        env:
+          - POSTGRES_PASSWORD:
+              valueFrom:
+                secretKeyRef:
+                  name: my-first-secret
+                  key: POSTGRES_PASSWORD
+          - POSTGRES_USER:
+              valueFrom:
+                secretKeyRef:
+                  name: my-first-secret
+                  key: POSTGRES_USER
+          - POSTGRES_DB:
+              valueFrom:
+                secretKeyRef:
+                  name: my-first-secret
+                  key: POSTGRES_DB
+        image: postgres:latest
+        ports:
+        - containerPort: 5432
+          name: 
+            valueFrom:
+              configMapKeyRef:
+                name: my-first-cm
+                key: PG_PORT

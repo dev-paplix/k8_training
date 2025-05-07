@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: my-first-cm
 data:
-  PG_TARGET_PORT: "pg-port"
+  PG_PORT: "pg-port"
